@@ -23,5 +23,7 @@ executable frontend
   build-depends:       base >=4.11 && <4.12
                      , common
                      , reflex-dom
+                     , file-embed
+                     , text
   hs-source-dirs: src
   default-language:    Haskell2010
