@@ -1,3 +1,46 @@
+* {
+    box-sizing: border-box;
+}
+
+html {
+    height: 100%;
+}
+
+body {
+    min-height: 100%;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+}
+
+main {
+    display: flex;
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-around;
+}
+
+header {
+    
+
+}
+
+footer {
+}
+
+.radioGroup {
+    display: flex;
+    flex-direction: column;
+}
+
+.radioOption {
+    
+}
+
 .entry {
     color: black;
     font-size: 3em;
@@ -13,7 +56,7 @@
 
 .map {
     display: grid;
-    width: 100%;
+    width: 500px;
     height: 500px;
     grid-template-columns: 50px 50px 1fr 1fr;
     grid-template-rows: 50px 50px 1fr 1fr;
@@ -64,8 +107,4 @@
     display: flex;
     align-items: center;
     justify-content: space-evenly;
-}
-
-* {
-    box-sizing: border-box;
 }
