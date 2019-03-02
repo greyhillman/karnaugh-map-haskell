@@ -13,19 +13,18 @@ showSize Medium = "2x4"
 showSize Large = "4x4"
 
 
-data KMap = KMap2x2 | KMap2x4 | KMap4x4
+data KMap = KMap Size [[Entry]]
 
-getKMapFromSize :: Size -> KMap
-getKMapFromSize Small = KMap2x2
-getKMapFromSize Medium = KMap2x4
-getKMapFromSize Large = KMap4x4
+makeNewKMap :: Size -> KMap
+makeNewKMap Small = KMap Small [[EFalse, EFalse], [EFalse, EFalse]]
 
 data Entry = ETrue | EFalse | DontCare
 
-nextEntry :: Entry -> Entry
-nextEntry EFalse = ETrue
-nextEntry ETrue = DontCare
-nextEntry DontCare = EFalse
+nextEntry :: Bool -> Entry -> Entry
+nextEntry _ EFalse = ETrue
+nextEntry True ETrue = DontCare
+nextEntry False ETrue = EFalse
+nextEntry _ DontCare = EFalse
 
 displayEntry :: Entry -> Text
 displayEntry ETrue = "1"

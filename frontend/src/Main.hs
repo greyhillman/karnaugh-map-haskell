@@ -2,61 +2,28 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE RecursiveDo #-}
 module Main where
 
 import Reflex.Dom
 import Data.Text (Text)
 import qualified Data.Text as T
+import Control.Monad.Fix
 
 import Data.FileEmbed
 
-main = mainWidgetWithCss ($(embedFile "main.css"))
+import Options
+import Common
+
+main = mainWidgetWithCss ($(embedFile "static/main.css"))
     $ do
         renderHeader
         el "main" $ do
-            renderOptions
-            renderMap (KMap2x2 [[EFalse, ETrue], [DontCare, ETrue]])
+            options <- renderOptions
+            let dKMap = makeNewKMap <$> (optionsSize options)
+            renderMap options dKMap
         renderFooter
-
-renderOptions :: (PostBuild t m, MonadHold t m, DomBuilder t m) => m ()
-renderOptions = el "div" $ do
-    el "div" $ do
-        text "Select size of K-map"
-        size <- radioGroup Small showSize "size"
-        let sizeText = showSize <$> size
-        dynText ("Size: " <> sizeText)
-    el "div" $ do
-        text "Allow \"Don't Care\" States"
-        allowDontCare <- checkbox True def
         return ()
-
-radioGroup :: (DomBuilder t m, MonadHold t m, Eq a, Enum a, Bounded a) => a -> (a -> Text) -> Text -> m (Dynamic t a)
-radioGroup initialValue toText groupName = elClass "div" "radioGroup" $ do
-    events <- mapM (radioGroupOption groupName initialValue) options
-    holdDyn initialValue $ leftmost events
-    where
-        options = map toPair [minBound..maxBound]
-        toPair x = (x, toText x)
-
-radioGroupOption :: (DomBuilder t m, Eq a) => Text -> a -> (a, Text) -> m (Event t a)
-radioGroupOption groupName initialValue (value, text') = elClass "div" "radioOption" $ do
-    el "label" $ do
-        text text'
-    (e, _) <- elAttr' "input" attrs' blank
-    return $ value <$ domEvent Click e
-    where
-        attrs = ("type" =: "radio") <> ("name" =: groupName)
-        attrs' = if isChecked then attrs <> ("checked" =: "checked") else attrs
-        isChecked = initialValue == value
-
-
-data Size = Small | Medium | Large
-    deriving (Eq, Show, Enum, Bounded)
-
-showSize :: Size -> Text
-showSize Small = "2x2"
-showSize Medium = "2x4"
-showSize Large = "4x4"
 
 renderFooter :: DomBuilder t m => m ()
 renderFooter = el "footer" $ do
@@ -67,15 +34,12 @@ renderHeader = do
     el "header" $ do
         text "Karanaugh Map Generator"
 
-renderMap :: DomBuilder t m => KMap -> m ()
-renderMap map = do
-    showKMap map
+renderMap :: (MonadSample t m, DomBuilder t m, PostBuild t m, MonadHold t m, MonadFix m) => Options t -> Dynamic t KMap -> m ()
+renderMap options dMap = do
+    map <- sample $ current dMap
+    showKMap options map
 
-data KMap = KMap2x2 [[Entry]]
-
-data Entry = ETrue | EFalse | DontCare
-
-showKMap (KMap2x2 entries) = elClass "div" "map" $ do
+showKMap options (KMap size entries) = elClass "div" "map" $ do
     elClass "div" "top" $ text "X"
     elClass "div" "left" $ text "Y"
     elClass "div" "top-num" $ do
@@ -85,16 +49,23 @@ showKMap (KMap2x2 entries) = elClass "div" "map" $ do
         el "div" $ text "0"
         el "div" $ text "1"
     elClass "div" "grid" $ do
-        mapM_ (mapM_ showEntry) entries
+        let dAllowDontCare = optionsAllowDontCare options
+        mapM_ (mapM_  $ mapEntry dAllowDontCare) entries
 
 showEntry entry = elClass "div" "entry" $ text (displayEntry entry)
 
-clickableEntry entry = do
-    (e, _) <- el' "div" (text "click")
+renderEntry :: (DomBuilder t m, PostBuild t m) => Dynamic t Entry -> m (Event t ())
+renderEntry dEntry = do
+    (e, _) <- elClass' "div" "entry" $ do
+        dynText $ displayEntry <$> dEntry
     return $ domEvent Click e
 
+mapEntry :: (DomBuilder t m, PostBuild t m, MonadHold t m, MonadFix m) => Dynamic t Bool -> Entry -> m (Event t Entry)
+mapEntry dAllowDontCare initialEntry = mdo
+    eClick <- renderEntry entry
+    let bAllowDontCare = current dAllowDontCare
+    let changeEntry = nextEntry <$> bAllowDontCare <@ eClick
+    entry <- foldDyn ($) initialEntry changeEntry
+    return $ updated entry
 
-displayEntry :: Entry -> Text
-displayEntry ETrue = "1"
-displayEntry EFalse = "0"
-displayEntry DontCare = "X"
+

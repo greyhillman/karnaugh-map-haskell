@@ -1,1 +1,1 @@
-ghcid "--command=ghci src/Main.hs" -W --test "main"
+ghcid "--command=cabal new-repl frontend" -W --test "main"

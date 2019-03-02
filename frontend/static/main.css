@@ -58,6 +58,11 @@ footer {
     display: grid;
     width: 500px;
     height: 500px;
+    cursor: default;
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
     grid-template-columns: 50px 50px 1fr 1fr;
     grid-template-rows: 50px 50px 1fr 1fr;
     grid-template-areas:
