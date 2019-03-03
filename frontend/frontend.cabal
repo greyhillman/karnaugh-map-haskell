@@ -22,6 +22,7 @@ executable frontend
   -- other-extensions:
   build-depends:       base >=4.11 && <4.12
                      , reflex-dom
+                     , containers
                      , file-embed
                      , text
   hs-source-dirs: src
